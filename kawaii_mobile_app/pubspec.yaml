@@ -1,0 +1,16 @@
+name: kawaii_mobile_app
+description: "iOS/Android应用，支持提币、转账、生活缴费。用途：移动端用户体验。"
+publish_to: 'none'
+version: 1.0.0+1
+environment:
+  sdk: ^3.9.0
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
