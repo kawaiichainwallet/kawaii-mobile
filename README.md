@@ -1,2 +1,7 @@
-# wallet-mobile
-功能：iOS/Android应用，支持提币、转账、生活缴费。用途：移动端用户体验。
+# kawaii-mobile
+
+> iOS/Android应用，支持提币、转账、生活缴费。
+
+## 功能截图示意
+
+![页面截图](./images/页面截图01.png)
