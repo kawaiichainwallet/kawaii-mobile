@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../../core/storage/secure_storage_service.dart';
 import '../../core/utils/logger.dart';
+import '../../core/api/api_client.dart';
 
 enum AuthStatus {
   initial,
@@ -11,6 +12,19 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   error,
+}
+
+enum RegisterStep {
+  selectMethod,    // 选择注册方式
+  inputInfo,       // 输入手机号/邮箱
+  verifyOtp,       // 验证OTP
+  setPassword,     // 设置密码
+  completed        // 注册完成
+}
+
+enum RegisterMethod {
+  phone,          // 手机号注册
+  email           // 邮箱注册
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -22,6 +36,7 @@ class AuthProvider extends ChangeNotifier {
   // Services
   final SecureStorageService _secureStorage = SecureStorageService();
   final AppLogger _logger = AppLogger();
+  final ApiClient _apiClient = ApiClient.instance;
 
   // Getters
   AuthStatus get status => _status;
@@ -54,32 +69,43 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> registerWithPhone({
     required String phoneNumber,
     required String verificationCode,
+    required String username,
     required String password,
-    required String transactionPassword,
+    required String confirmPassword,
+    required bool agreeToTerms,
   }) async {
     try {
       _setStatus(AuthStatus.loading);
 
-      // TODO: Implement API call
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-
-      // For demo purposes, create a mock user
-      _user = UserModel(
-        id: '1',
-        phoneNumber: phoneNumber,
-        email: null,
-        isPhoneVerified: true,
-        isEmailVerified: false,
-        kycLevel: KYCLevel.level1,
-        createdAt: DateTime.now(),
+      final response = await _apiClient.registerWithOtp(
+        target: phoneNumber,
+        type: 'phone',
+        otpCode: verificationCode,
+        username: username,
+        password: password,
+        confirmPassword: confirmPassword,
+        agreeToTerms: agreeToTerms,
       );
 
-      // Save authentication data
-      await _saveAuthData('mock_access_token', 'mock_refresh_token');
+      if (response.success && response.data != null) {
+        final registerData = response.data!;
 
-      _setStatus(AuthStatus.authenticated);
-      _logger.info('User registered successfully with phone: $phoneNumber');
-      return true;
+        // 保存认证数据
+        await _saveAuthData(registerData.accessToken, registerData.refreshToken);
+
+        // 获取用户信息
+        await _fetchUserInfo();
+
+        _setStatus(AuthStatus.authenticated);
+        _logger.info('User registered successfully with phone: $phoneNumber');
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } on ApiException catch (e) {
+      _setError('注册失败：${e.message}');
+      return false;
     } catch (e) {
       _setError('注册失败：$e');
       return false;
@@ -90,30 +116,43 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> registerWithEmail({
     required String email,
     required String verificationCode,
+    required String username,
     required String password,
-    required String transactionPassword,
+    required String confirmPassword,
+    required bool agreeToTerms,
   }) async {
     try {
       _setStatus(AuthStatus.loading);
 
-      // TODO: Implement API call
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-
-      _user = UserModel(
-        id: '1',
-        phoneNumber: null,
-        email: email,
-        isPhoneVerified: false,
-        isEmailVerified: true,
-        kycLevel: KYCLevel.level1,
-        createdAt: DateTime.now(),
+      final response = await _apiClient.registerWithOtp(
+        target: email,
+        type: 'email',
+        otpCode: verificationCode,
+        username: username,
+        password: password,
+        confirmPassword: confirmPassword,
+        agreeToTerms: agreeToTerms,
       );
 
-      await _saveAuthData('mock_access_token', 'mock_refresh_token');
+      if (response.success && response.data != null) {
+        final registerData = response.data!;
 
-      _setStatus(AuthStatus.authenticated);
-      _logger.info('User registered successfully with email: $email');
-      return true;
+        // 保存认证数据
+        await _saveAuthData(registerData.accessToken, registerData.refreshToken);
+
+        // 获取用户信息
+        await _fetchUserInfo();
+
+        _setStatus(AuthStatus.authenticated);
+        _logger.info('User registered successfully with email: $email');
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } on ApiException catch (e) {
+      _setError('注册失败：${e.message}');
+      return false;
     } catch (e) {
       _setError('注册失败：$e');
       return false;
@@ -194,14 +233,26 @@ class AuthProvider extends ChangeNotifier {
   // Send verification code
   Future<bool> sendVerificationCode({
     required String target, // phone or email
-    required String type, // 'register', 'login', 'forgot_password'
+    required String targetType, // 'phone' or 'email'
+    required String purpose, // 'register', 'login', 'reset_password'
   }) async {
     try {
-      // TODO: Implement API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await _apiClient.sendOtp(
+        target: target,
+        type: targetType,
+        purpose: purpose,
+      );
 
-      _logger.info('Verification code sent to: $target for $type');
-      return true;
+      if (response.success) {
+        _logger.info('Verification code sent to: $target for $purpose');
+        return true;
+      } else {
+        _setError(response.message);
+        return false;
+      }
+    } on ApiException catch (e) {
+      _setError('发送验证码失败：${e.message}');
+      return false;
     } catch (e) {
       _setError('发送验证码失败：$e');
       return false;
@@ -267,24 +318,51 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _validateTokenAndGetUser(String token) async {
     try {
-      // TODO: Implement token validation API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      // For demo, create mock user
-      _user = UserModel(
-        id: '1',
-        phoneNumber: '+86 138****8888',
-        email: 'user@example.com',
-        isPhoneVerified: true,
-        isEmailVerified: true,
-        kycLevel: KYCLevel.level2,
-        createdAt: DateTime.now(),
-      );
-
+      await _fetchUserInfo();
       _setStatus(AuthStatus.authenticated);
     } catch (e) {
+      _logger.error('Token validation failed: $e');
       await _secureStorage.clearAll();
       _setStatus(AuthStatus.unauthenticated);
+    }
+  }
+
+  Future<void> _fetchUserInfo() async {
+    try {
+      final response = await _apiClient.getUserInfo();
+
+      if (response.success && response.data != null) {
+        final userInfo = response.data!;
+
+        _user = UserModel(
+          id: userInfo.userId,
+          username: userInfo.username,
+          phoneNumber: userInfo.phoneNumber,
+          email: userInfo.email,
+          isPhoneVerified: userInfo.isPhoneVerified,
+          isEmailVerified: userInfo.isEmailVerified,
+          kycLevel: _mapKycLevel(userInfo.kycLevel),
+          createdAt: userInfo.createdAt,
+        );
+      } else {
+        throw Exception(response.message);
+      }
+    } catch (e) {
+      _logger.error('Failed to fetch user info: $e');
+      rethrow;
+    }
+  }
+
+  KYCLevel _mapKycLevel(String level) {
+    switch (level.toUpperCase()) {
+      case 'LEVEL_1':
+        return KYCLevel.level1;
+      case 'LEVEL_2':
+        return KYCLevel.level2;
+      case 'LEVEL_3':
+        return KYCLevel.level3;
+      default:
+        return KYCLevel.level1;
     }
   }
 

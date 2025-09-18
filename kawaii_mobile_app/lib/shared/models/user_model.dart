@@ -25,6 +25,7 @@ enum UserStatus {
 @JsonSerializable()
 class UserModel {
   final String id;
+  final String? username;
   final String? phoneNumber;
   final String? email;
   final String? firstName;
@@ -40,6 +41,7 @@ class UserModel {
 
   const UserModel({
     required this.id,
+    this.username,
     this.phoneNumber,
     this.email,
     this.firstName,
@@ -65,6 +67,9 @@ class UserModel {
     }
     if (firstName != null) {
       return firstName!;
+    }
+    if (username != null) {
+      return username!;
     }
     if (phoneNumber != null) {
       return maskPhoneNumber(phoneNumber!);
@@ -114,6 +119,7 @@ class UserModel {
   // Copy with method
   UserModel copyWith({
     String? id,
+    String? username,
     String? phoneNumber,
     String? email,
     String? firstName,
@@ -129,6 +135,7 @@ class UserModel {
   }) {
     return UserModel(
       id: id ?? this.id,
+      username: username ?? this.username,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       firstName: firstName ?? this.firstName,
@@ -155,6 +162,6 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, phoneNumber: $phoneNumber, email: $email, kycLevel: $kycLevel)';
+    return 'UserModel(id: $id, username: $username, phoneNumber: $phoneNumber, email: $email, kycLevel: $kycLevel)';
   }
 }
