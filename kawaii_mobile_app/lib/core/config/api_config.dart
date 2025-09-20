@@ -12,14 +12,14 @@ class ApiConfig {
     }
   }
 
-  // 开发环境 - 本地服务
-  static const String developmentUrl = 'http://localhost:8090/api/v1';
+  // 开发环境 - 通过API网关访问 (8080端口)
+  static const String developmentUrl = 'http://localhost:8080';
 
   // 测试环境
-  static const String stagingUrl = 'https://staging-api.kawaiichainwallet.com/api/v1';
+  static const String stagingUrl = 'https://staging-api.kawaiichainwallet.com';
 
   // 生产环境
-  static const String productionUrl = 'https://api.kawaiichainwallet.com/api/v1';
+  static const String productionUrl = 'https://api.kawaiichainwallet.com';
 
   // Android 模拟器的特殊配置（如果需要）
   static const String androidEmulatorUrl = 'http://10.0.2.2:8080/api/v1';

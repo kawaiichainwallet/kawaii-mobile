@@ -14,6 +14,7 @@ class SecureStorageService {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userIdKey = 'user_id';
+  static const String _usernameKey = 'username';
   static const String _biometricEnabledKey = 'biometric_enabled';
   static const String _pinCodeKey = 'pin_code';
   static const String _privateKeyKey = 'private_key';
@@ -70,6 +71,23 @@ class SecureStorageService {
       await _storage.write(key: _userIdKey, value: userId);
     } catch (e) {
       _logger.error('Failed to set user ID: $e');
+    }
+  }
+
+  Future<String?> getUsername() async {
+    try {
+      return await _storage.read(key: _usernameKey);
+    } catch (e) {
+      _logger.error('Failed to get username: $e');
+      return null;
+    }
+  }
+
+  Future<void> setUsername(String username) async {
+    try {
+      await _storage.write(key: _usernameKey, value: username);
+    } catch (e) {
+      _logger.error('Failed to set username: $e');
     }
   }
 

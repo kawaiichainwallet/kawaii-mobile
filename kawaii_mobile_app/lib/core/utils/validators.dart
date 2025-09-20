@@ -219,4 +219,14 @@ class Validators {
 
     return null;
   }
+
+  // Boolean validation methods for simple checks
+  static bool isValidPhone(String value) {
+    final cleanPhone = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    return RegExp(AppConstants.phonePattern).hasMatch(cleanPhone);
+  }
+
+  static bool isValidEmail(String value) {
+    return RegExp(AppConstants.emailPattern).hasMatch(value);
+  }
 }

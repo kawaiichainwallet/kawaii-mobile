@@ -82,16 +82,15 @@ class ApiClient {
       final refreshToken = await _secureStorage.getRefreshToken();
       if (refreshToken != null) {
         // 尝试刷新 token
-        final response = await _dio.post('/auth/refresh', data: {
+        final response = await _dio.post('/api/v1/refresh', data: {
           'refreshToken': refreshToken,
         });
 
         if (response.statusCode == 200) {
-          final newAccessToken = response.data['data']['accessToken'];
-          final newRefreshToken = response.data['data']['refreshToken'];
+          final loginResponse = LoginResponse.fromJson(response.data['data']);
 
-          await _secureStorage.setAccessToken(newAccessToken);
-          await _secureStorage.setRefreshToken(newRefreshToken);
+          await _secureStorage.setAccessToken(loginResponse.accessToken);
+          await _secureStorage.setRefreshToken(loginResponse.refreshToken);
         }
       } else {
         // 清除所有 token，用户需要重新登录
@@ -104,7 +103,7 @@ class ApiClient {
   }
 
   // 通用请求方法
-  Future<ApiResponse<T>> request<T>(
+  Future<R<T>> request<T>(
     String endpoint, {
     String method = 'GET',
     Map<String, dynamic>? data,
@@ -131,7 +130,7 @@ class ApiClient {
           throw Exception('Unsupported HTTP method: $method');
       }
 
-      return ApiResponse<T>.fromJson(
+      return R<T>.fromJson(
         response.data,
         fromJson: fromJson,
       );
@@ -147,14 +146,14 @@ class ApiClient {
     }
   }
 
-  // 用户相关 API
-  Future<ApiResponse<void>> sendOtp({
+  // 用户相关 API (kawaii-user 服务)
+  Future<R<void>> sendOtp({
     required String target,
     required String type,
     required String purpose,
   }) async {
     return request<void>(
-      '/users/register/send-otp',
+      '/api/v1/users/register/send-otp',
       method: 'POST',
       data: {
         'target': target,
@@ -164,7 +163,7 @@ class ApiClient {
     );
   }
 
-  Future<ApiResponse<RegisterResponse>> registerWithOtp({
+  Future<R<RegisterResponse>> registerWithOtp({
     required String target,
     required String type,
     required String otpCode,
@@ -174,7 +173,7 @@ class ApiClient {
     required bool agreeToTerms,
   }) async {
     return request<RegisterResponse>(
-      '/users/register/verify-otp',
+      '/api/v1/users/register/verify-otp',
       method: 'POST',
       data: {
         'target': target,
@@ -189,35 +188,117 @@ class ApiClient {
     );
   }
 
-  Future<ApiResponse<UserInfoResponse>> getUserInfo() async {
+  Future<R<UserInfoResponse>> getUserInfo() async {
     return request<UserInfoResponse>(
-      '/users/profile',
+      '/api/v1/users/profile',
       fromJson: (json) => UserInfoResponse.fromJson(json),
     );
   }
 
-  Future<ApiResponse<String>> healthCheck() async {
-    return request<String>('/users/health');
+  Future<R<UserInfoResponse>> updateUserInfo({
+    required Map<String, dynamic> userData,
+  }) async {
+    return request<UserInfoResponse>(
+      '/api/v1/users/profile',
+      method: 'PUT',
+      data: userData,
+      fromJson: (json) => UserInfoResponse.fromJson(json),
+    );
+  }
+
+  Future<R<String>> healthCheck() async {
+    return request<String>('/api/v1/users/health');
+  }
+
+  // 认证相关 API (集成在kawaii-user服务中)
+  Future<R<LoginResponse>> login({
+    required String identifier,
+    required String password,
+  }) async {
+    return request<LoginResponse>(
+      '/api/v1/login',
+      method: 'POST',
+      data: {
+        'identifier': identifier,
+        'password': password,
+      },
+      fromJson: (json) => LoginResponse.fromJson(json),
+    );
+  }
+
+  Future<R<LoginResponse>> loginWithOtp({
+    required String phone,
+    required String otpCode,
+  }) async {
+    return request<LoginResponse>(
+      '/api/v1/login/otp',
+      method: 'POST',
+      data: {
+        'phone': phone,
+        'otpCode': otpCode,
+      },
+      fromJson: (json) => LoginResponse.fromJson(json),
+    );
+  }
+
+  Future<R<void>> sendLoginOtp({
+    required String phone,
+  }) async {
+    return request<void>(
+      '/api/v1/send-login-otp',
+      method: 'POST',
+      data: {
+        'phone': phone,
+      },
+    );
+  }
+
+  Future<R<LoginResponse>> refreshToken({
+    required String refreshToken,
+  }) async {
+    return request<LoginResponse>(
+      '/api/v1/refresh',
+      method: 'POST',
+      data: {
+        'refreshToken': refreshToken,
+      },
+      fromJson: (json) => LoginResponse.fromJson(json),
+    );
+  }
+
+  Future<R<void>> logout() async {
+    return request<void>(
+      '/api/v1/logout',
+      method: 'POST',
+    );
+  }
+
+  // Token验证 API
+  Future<R<Map<String, dynamic>>> validateToken() async {
+    return request<Map<String, dynamic>>(
+      '/api/v1/validate',
+      method: 'GET',
+    );
   }
 }
 
 // API 响应包装类
-class ApiResponse<T> {
+class R<T> {
   final bool success;
-  final String message;
+  final String msg;
   final T? data;
   final String? timestamp;
   final String? traceId;
 
-  ApiResponse({
+  R({
     required this.success,
-    required this.message,
+    required this.msg,
     this.data,
     this.timestamp,
     this.traceId,
   });
 
-  factory ApiResponse.fromJson(
+  factory R.fromJson(
     Map<String, dynamic> json, {
     T Function(Map<String, dynamic>)? fromJson,
   }) {
@@ -233,9 +314,9 @@ class ApiResponse<T> {
       data = json['data'];
     }
 
-    return ApiResponse<T>(
+    return R<T>(
       success: json['success'] ?? false,
-      message: json['message'] ?? '',
+      msg: json['msg'] ?? json['message'] ?? '',
       data: data,
       timestamp: json['timestamp'],
       traceId: json['traceId'],
@@ -278,7 +359,7 @@ class ApiException implements Exception {
           if (statusCode >= 400 && statusCode < 500) {
             // 客户端错误
             if (error.response?.data != null && error.response?.data is Map) {
-              message = error.response?.data['message'] ?? '请求错误';
+              message = error.response?.data['msg'] ?? error.response?.data['message'] ?? '请求错误';
               code = error.response?.data['code'] ?? 'CLIENT_ERROR';
             } else {
               message = '请求错误';
@@ -380,6 +461,41 @@ class UserInfoResponse {
       isEmailVerified: json['isEmailVerified'] ?? false,
       kycLevel: json['kycLevel'] ?? 'LEVEL_1',
       createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+}
+
+class LoginResponse {
+  final String userId;
+  final String username;
+  final String? phone;
+  final String? email;
+  final String accessToken;
+  final String refreshToken;
+  final int expiresIn;
+  final String tokenType;
+
+  LoginResponse({
+    required this.userId,
+    required this.username,
+    this.phone,
+    this.email,
+    required this.accessToken,
+    required this.refreshToken,
+    required this.expiresIn,
+    required this.tokenType,
+  });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    return LoginResponse(
+      userId: json['userId'],
+      username: json['username'],
+      phone: json['phone'],
+      email: json['email'],
+      accessToken: json['accessToken'],
+      refreshToken: json['refreshToken'],
+      expiresIn: json['expiresIn'],
+      tokenType: json['tokenType'] ?? 'Bearer',
     );
   }
 }

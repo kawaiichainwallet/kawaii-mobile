@@ -1,6 +1,6 @@
-# kawaii-mobile
+# 移动端
 
-> iOS/Android应用，支持提币、转账、生活缴费。
+[请查看项目文档](https://github.com/kawaiichainwallet/kawaii-docs)
 
 ## 功能截图示意
 
