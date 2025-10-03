@@ -12,8 +12,8 @@ class ApiConfig {
     }
   }
 
-  // 开发环境 - 通过API网关访问 (8080端口)
-  static const String developmentUrl = 'http://localhost:8080';
+  // 开发环境 - 通过API网关访问 (8090端口)
+  static const String developmentUrl = 'http://localhost:8090';
 
   // 测试环境
   static const String stagingUrl = 'https://staging-api.kawaiichainwallet.com';
@@ -22,10 +22,10 @@ class ApiConfig {
   static const String productionUrl = 'https://api.kawaiichainwallet.com';
 
   // Android 模拟器的特殊配置（如果需要）
-  static const String androidEmulatorUrl = 'http://10.0.2.2:8080/api/v1';
+  static const String androidEmulatorUrl = 'http://10.0.2.2:8090';
 
   // iOS 模拟器的特殊配置（如果需要）
-  static const String iOSSimulatorUrl = 'http://127.0.0.1:8080/api/v1';
+  static const String iOSSimulatorUrl = 'http://127.0.0.1:8090';
 
   // 连接超时配置
   static const Duration connectTimeout = Duration(seconds: 30);

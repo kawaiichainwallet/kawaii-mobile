@@ -82,7 +82,7 @@ class ApiClient {
       final refreshToken = await _secureStorage.getRefreshToken();
       if (refreshToken != null) {
         // 尝试刷新 token
-        final response = await _dio.post('/api/v1/refresh', data: {
+        final response = await _dio.post('/kawaii-user/auth/refresh', data: {
           'refreshToken': refreshToken,
         });
 
@@ -153,7 +153,7 @@ class ApiClient {
     required String purpose,
   }) async {
     return request<void>(
-      '/api/v1/users/register/send-otp',
+      '/kawaii-user/auth/send-register-otp',
       method: 'POST',
       data: {
         'target': target,
@@ -173,7 +173,7 @@ class ApiClient {
     required bool agreeToTerms,
   }) async {
     return request<RegisterResponse>(
-      '/api/v1/users/register/verify-otp',
+      '/kawaii-user/auth/register',
       method: 'POST',
       data: {
         'target': target,
@@ -190,7 +190,7 @@ class ApiClient {
 
   Future<R<UserInfoResponse>> getUserInfo() async {
     return request<UserInfoResponse>(
-      '/api/v1/users/profile',
+      '/kawaii-user/profile',
       fromJson: (json) => UserInfoResponse.fromJson(json),
     );
   }
@@ -199,7 +199,7 @@ class ApiClient {
     required Map<String, dynamic> userData,
   }) async {
     return request<UserInfoResponse>(
-      '/api/v1/users/profile',
+      '/kawaii-user/profile',
       method: 'PUT',
       data: userData,
       fromJson: (json) => UserInfoResponse.fromJson(json),
@@ -207,7 +207,7 @@ class ApiClient {
   }
 
   Future<R<String>> healthCheck() async {
-    return request<String>('/api/v1/users/health');
+    return request<String>('/kawaii-user/health');
   }
 
   // 认证相关 API (集成在kawaii-user服务中)
@@ -216,7 +216,7 @@ class ApiClient {
     required String password,
   }) async {
     return request<LoginResponse>(
-      '/api/v1/login',
+      '/kawaii-user/auth/login',
       method: 'POST',
       data: {
         'identifier': identifier,
@@ -231,7 +231,7 @@ class ApiClient {
     required String otpCode,
   }) async {
     return request<LoginResponse>(
-      '/api/v1/login/otp',
+      '/kawaii-user/auth/login/otp',
       method: 'POST',
       data: {
         'phone': phone,
@@ -245,7 +245,7 @@ class ApiClient {
     required String phone,
   }) async {
     return request<void>(
-      '/api/v1/send-login-otp',
+      '/kawaii-user/auth/send-login-otp',
       method: 'POST',
       data: {
         'phone': phone,
@@ -257,7 +257,7 @@ class ApiClient {
     required String refreshToken,
   }) async {
     return request<LoginResponse>(
-      '/api/v1/refresh',
+      '/kawaii-user/auth/refresh',
       method: 'POST',
       data: {
         'refreshToken': refreshToken,
@@ -268,7 +268,7 @@ class ApiClient {
 
   Future<R<void>> logout() async {
     return request<void>(
-      '/api/v1/logout',
+      '/kawaii-user/auth/logout',
       method: 'POST',
     );
   }
@@ -276,7 +276,7 @@ class ApiClient {
   // Token验证 API
   Future<R<Map<String, dynamic>>> validateToken() async {
     return request<Map<String, dynamic>>(
-      '/api/v1/validate',
+      '/kawaii-user/auth/validate',
       method: 'GET',
     );
   }
