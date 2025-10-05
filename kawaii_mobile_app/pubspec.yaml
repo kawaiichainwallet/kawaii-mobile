@@ -33,8 +33,6 @@ dependencies:
 
   # Security & Biometrics
   local_auth: ^2.3.0
-  local_auth_android: ^1.0.41
-  local_auth_ios: ^1.0.21
   crypto: ^3.0.6
   encrypt: ^5.0.3
 

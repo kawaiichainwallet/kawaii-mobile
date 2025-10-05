@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../storage/secure_storage_service.dart';
 import '../utils/logger.dart';

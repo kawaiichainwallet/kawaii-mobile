@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen>
   late TabController _tabController;
   bool _obscurePassword = true;
   bool _rememberMe = false;
-  bool _isOtpSent = false;
   int _countdown = 0;
 
   @override
@@ -537,7 +536,6 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (success) {
       setState(() {
-        _isOtpSent = true;
         _countdown = 60;
       });
 

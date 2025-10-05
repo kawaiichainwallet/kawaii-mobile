@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
-import '../../core/storage/secure_storage_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/auth_api.dart';
@@ -37,7 +36,6 @@ class AuthProvider extends ChangeNotifier {
   bool _rememberMe = false;
 
   // Services
-  final SecureStorageService _secureStorage = SecureStorageService();
   final AppLogger _logger = AppLogger();
   final ApiClient _apiClient = ApiClient.instance;
   final AuthApi _authApi = AuthApi.instance;
@@ -109,8 +107,6 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.success && response.data != null) {
-        final registerData = response.data!;
-
         // 保存记住我偏好
         await _saveRememberMePreference();
 
@@ -156,8 +152,6 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.success && response.data != null) {
-        final registerData = response.data!;
-
         // 保存记住我偏好
         await _saveRememberMePreference();
 
@@ -431,10 +425,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _clearPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-  }
 
   // 便利方法：检查当前用户ID
   Future<String?> getCurrentUserId() async {

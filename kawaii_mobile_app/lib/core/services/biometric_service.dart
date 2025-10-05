@@ -1,6 +1,4 @@
 import 'package:local_auth/local_auth.dart';
-import 'package:local_auth_android/local_auth_android.dart';
-import 'package:local_auth_ios/local_auth_ios.dart';
 
 import '../storage/secure_storage_service.dart';
 import '../utils/logger.dart';
@@ -50,7 +48,9 @@ class BiometricService {
   Future<List<BiometricType>> getAvailableBiometrics() async {
     try {
       final availableBiometrics = await _localAuth.getAvailableBiometrics();
-      return availableBiometrics.map(_mapBiometricType).toList();
+      return availableBiometrics
+          .map((type) => _mapBiometricType(type))
+          .toList();
     } catch (e) {
       _logger.error('获取可用生物识别类型失败: $e');
       return [];
@@ -108,22 +108,6 @@ class BiometricService {
     try {
       final isAuthenticated = await _localAuth.authenticate(
         localizedReason: reason,
-        authMessages: const [
-          AndroidAuthMessages(
-            signInTitle: '生物识别验证',
-            cancelButton: '取消',
-            deviceCredentialsRequiredTitle: '需要设备凭据',
-            deviceCredentialsSetupDescription: '请在设备设置中配置生物识别',
-            goToSettingsButton: '去设置',
-            goToSettingsDescription: '需要在设置中配置生物识别',
-          ),
-          IOSAuthMessages(
-            cancelButton: '取消',
-            goToSettingsButton: '去设置',
-            goToSettingsDescription: '需要在设置中配置生物识别',
-            lockOut: '生物识别已锁定，请使用密码',
-          ),
-        ],
         options: AuthenticationOptions(
           useErrorDialogs: useErrorDialogs,
           stickyAuth: stickyAuth,
@@ -209,17 +193,15 @@ class BiometricService {
   }
 
   /// 映射生物识别类型
-  BiometricType _mapBiometricType(BiometricType type) {
-    switch (type) {
-      case BiometricType.fingerprint:
-        return BiometricType.fingerprint;
-      case BiometricType.face:
-        return BiometricType.face;
-      case BiometricType.iris:
-        return BiometricType.iris;
-      default:
-        return BiometricType.none;
+  BiometricType _mapBiometricType(dynamic type) {
+    if (type.toString().contains('fingerprint')) {
+      return BiometricType.fingerprint;
+    } else if (type.toString().contains('face')) {
+      return BiometricType.face;
+    } else if (type.toString().contains('iris')) {
+      return BiometricType.iris;
     }
+    return BiometricType.none;
   }
 
   /// 获取生物识别类型名称
