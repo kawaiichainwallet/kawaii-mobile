@@ -162,6 +162,24 @@ class ApiClient {
     );
   }
 
+  Future<R<Map<String, dynamic>>> verifyOtp({
+    required String target,
+    required String type,
+    required String otpCode,
+    required String purpose,
+  }) async {
+    return request<Map<String, dynamic>>(
+      '/kawaii-user/auth/verify-otp',
+      method: 'POST',
+      data: {
+        'target': target,
+        'type': type,
+        'otpCode': otpCode,
+        'purpose': purpose,
+      },
+    );
+  }
+
   Future<R<RegisterResponse>> registerWithOtp({
     required String target,
     required String type,

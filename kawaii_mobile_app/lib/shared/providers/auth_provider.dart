@@ -320,6 +320,43 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // 验证OTP验证码
+  Future<bool> verifyOtp({
+    required String target,
+    required String targetType,
+    required String otpCode,
+    required String purpose,
+  }) async {
+    try {
+      _setStatus(AuthStatus.loading);
+
+      final response = await _apiClient.verifyOtp(
+        target: target,
+        type: targetType,
+        otpCode: otpCode,
+        purpose: purpose,
+      );
+
+      if (response.success && response.data != null) {
+        _logger.info('OTP verification successful: $target');
+        _setStatus(AuthStatus.unauthenticated);
+        return true;
+      } else {
+        _setError(response.msg ?? '验证码验证失败');
+        _setStatus(AuthStatus.error);
+        return false;
+      }
+    } on ApiException catch (e) {
+      _setError('验证码验证失败：${e.message}');
+      _setStatus(AuthStatus.error);
+      return false;
+    } catch (e) {
+      _setError('验证码验证失败：$e');
+      _setStatus(AuthStatus.error);
+      return false;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     try {

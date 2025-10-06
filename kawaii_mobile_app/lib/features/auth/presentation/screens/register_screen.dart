@@ -386,15 +386,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(width: 16),
             Expanded(
               flex: 2,
-              child: ElevatedButton(
-                onPressed: _otpController.text.length == 6 ? _verifyOtp : null,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('验证', style: TextStyle(fontSize: 16)),
+              child: Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  return ElevatedButton(
+                    onPressed: (_otpController.text.length == 6 && !authProvider.isLoading)
+                        ? _verifyOtp
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: authProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('验证', style: TextStyle(fontSize: 16)),
+                  );
+                },
               ),
             ),
           ],
@@ -682,9 +694,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _currentStep = RegisterStep.setPassword;
-    });
+    final target = _selectedMethod == RegisterMethod.phone
+        ? _phoneController.text
+        : _emailController.text;
+    final targetType = _selectedMethod == RegisterMethod.phone ? 'phone' : 'email';
+
+    // 调用后端验证OTP
+    final success = await context.read<AuthProvider>().verifyOtp(
+      target: target,
+      targetType: targetType,
+      otpCode: _otpController.text,
+      purpose: 'register',
+    );
+
+    if (success) {
+      setState(() {
+        _currentStep = RegisterStep.setPassword;
+      });
+    } else {
+      if (mounted) {
+        final authProvider = context.read<AuthProvider>();
+        if (authProvider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(authProvider.errorMessage!)),
+          );
+        }
+      }
+    }
   }
 
   void _completeRegister() async {
