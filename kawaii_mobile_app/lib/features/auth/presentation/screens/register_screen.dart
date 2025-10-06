@@ -733,7 +733,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (_selectedMethod == RegisterMethod.phone) {
         success = await context.read<AuthProvider>().registerWithPhone(
           phoneNumber: target,
-          verificationCode: _otpController.text,
           username: _usernameController.text,
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
@@ -742,7 +741,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else {
         success = await context.read<AuthProvider>().registerWithEmail(
           email: target,
-          verificationCode: _otpController.text,
           username: _usernameController.text,
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,

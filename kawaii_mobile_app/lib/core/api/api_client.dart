@@ -183,7 +183,7 @@ class ApiClient {
   Future<R<RegisterResponse>> registerWithOtp({
     required String target,
     required String type,
-    required String otpCode,
+    required String verificationToken,
     required String username,
     required String password,
     required String confirmPassword,
@@ -195,7 +195,7 @@ class ApiClient {
       data: {
         'target': target,
         'type': type,
-        'otpCode': otpCode,
+        'verificationToken': verificationToken,
         'username': username,
         'password': password,
         'confirmPassword': confirmPassword,

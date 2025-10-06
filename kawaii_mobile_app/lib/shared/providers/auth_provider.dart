@@ -34,6 +34,7 @@ class AuthProvider extends ChangeNotifier {
   UserModel? _user;
   String? _errorMessage;
   bool _rememberMe = false;
+  String? _verificationToken;
 
   // Services
   final AppLogger _logger = AppLogger();
@@ -49,6 +50,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isLoading => _status == AuthStatus.loading;
   bool get rememberMe => _rememberMe;
+  String? get verificationToken => _verificationToken;
 
   // Initialize authentication state
   Future<void> initialize() async {
@@ -87,7 +89,6 @@ class AuthProvider extends ChangeNotifier {
   // Register with phone number
   Future<bool> registerWithPhone({
     required String phoneNumber,
-    required String verificationCode,
     required String username,
     required String password,
     required String confirmPassword,
@@ -96,10 +97,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       _setStatus(AuthStatus.loading);
 
+      // 检查是否有验证Token
+      if (_verificationToken == null) {
+        _setError('请先完成验证码验证');
+        return false;
+      }
+
       final response = await _apiClient.registerWithOtp(
         target: phoneNumber,
         type: 'phone',
-        otpCode: verificationCode,
+        verificationToken: _verificationToken!,
         username: username,
         password: password,
         confirmPassword: confirmPassword,
@@ -132,7 +139,6 @@ class AuthProvider extends ChangeNotifier {
   // Register with email
   Future<bool> registerWithEmail({
     required String email,
-    required String verificationCode,
     required String username,
     required String password,
     required String confirmPassword,
@@ -141,10 +147,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       _setStatus(AuthStatus.loading);
 
+      // 检查是否有验证Token
+      if (_verificationToken == null) {
+        _setError('请先完成验证码验证');
+        return false;
+      }
+
       final response = await _apiClient.registerWithOtp(
         target: email,
         type: 'email',
-        otpCode: verificationCode,
+        verificationToken: _verificationToken!,
         username: username,
         password: password,
         confirmPassword: confirmPassword,
@@ -339,6 +351,11 @@ class AuthProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         _logger.info('OTP verification successful: $target');
+
+        // 保存验证Token
+        _verificationToken = response.data!['verificationToken'] as String?;
+        _logger.info('Verification token saved: ${_verificationToken != null}');
+
         _setStatus(AuthStatus.unauthenticated);
         return true;
       } else {
