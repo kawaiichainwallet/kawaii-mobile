@@ -24,7 +24,7 @@ enum UserStatus {
 
 @JsonSerializable()
 class UserModel {
-  final String id;
+  final int id;
   final String? username;
   final String? phoneNumber;
   final String? email;
@@ -118,7 +118,7 @@ class UserModel {
 
   // Copy with method
   UserModel copyWith({
-    String? id,
+    int? id,
     String? username,
     String? phoneNumber,
     String? email,

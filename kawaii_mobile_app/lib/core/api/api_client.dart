@@ -33,6 +33,11 @@ class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+      responseType: ResponseType.json,
+      validateStatus: (status) {
+        // 接受所有状态码，让我们自己处理
+        return status != null && status < 500;
+      },
     ));
 
     // 添加拦截器
@@ -47,10 +52,6 @@ class ApiClient {
 
           if (ApiConfig.enableLogging) {
             _logger.info('Request: ${options.method} ${options.uri}');
-            _logger.info('Headers: ${options.headers}');
-            if (options.data != null) {
-              _logger.info('Body: ${options.data}');
-            }
           }
 
           handler.next(options);
@@ -58,12 +59,13 @@ class ApiClient {
         onResponse: (response, handler) {
           if (ApiConfig.enableLogging) {
             _logger.info('Response: ${response.statusCode} ${response.requestOptions.uri}');
-            _logger.info('Data: ${response.data}');
           }
           handler.next(response);
         },
         onError: (error, handler) async {
-          _logger.error('API Error: ${error.message}');
+          if (ApiConfig.enableLogging) {
+            _logger.error('API Error: ${error.requestOptions.method} ${error.requestOptions.uri} - ${error.message}');
+          }
 
           // 处理 token 过期
           if (error.response?.statusCode == 401) {
@@ -134,12 +136,10 @@ class ApiClient {
         fromJson: fromJson,
       );
     } on DioException catch (e) {
-      _logger.error('Dio Error: ${e.message}');
       throw ApiException.fromDioError(e);
     } catch (e) {
-      _logger.error('Unknown Error: $e');
       throw ApiException(
-        message: '网络请求失败',
+        message: '网络请求失败: $e',
         code: 'UNKNOWN_ERROR',
       );
     }
@@ -207,7 +207,7 @@ class ApiClient {
 
   Future<R<UserInfoResponse>> getUserInfo() async {
     return request<UserInfoResponse>(
-      '/kawaii-user/profile',
+      '/kawaii-user/users/profile',
       fromJson: (json) => UserInfoResponse.fromJson(json),
     );
   }
@@ -216,7 +216,7 @@ class ApiClient {
     required Map<String, dynamic> userData,
   }) async {
     return request<UserInfoResponse>(
-      '/kawaii-user/profile',
+      '/kawaii-user/users/profile',
       method: 'PUT',
       data: userData,
       fromJson: (json) => UserInfoResponse.fromJson(json),
@@ -265,7 +265,9 @@ class ApiClient {
       '/kawaii-user/auth/send-login-otp',
       method: 'POST',
       data: {
-        'phone': phone,
+        'target': phone,
+        'type': 'phone',
+        'purpose': 'login',
       },
     );
   }
@@ -331,8 +333,11 @@ class R<T> {
       data = json['data'];
     }
 
+    // 通过code判断是否成功（200表示成功）
+    final bool success = (json['code'] == 200);
+
     return R<T>(
-      success: json['success'] ?? false,
+      success: success,
       msg: json['msg'] ?? json['message'] ?? '',
       data: data,
       timestamp: json['timestamp'],
@@ -422,33 +427,45 @@ class ApiException implements Exception {
 
 // 响应数据模型
 class RegisterResponse {
-  final String userId;
+  final int userId;  // 后端返回Long类型
   final String username;
+  final String? phone;  // 可选字段
+  final String? email;  // 可选字段
   final String accessToken;
   final String refreshToken;
-  final DateTime expiresAt;
+  final int expiresIn;  // 后端返回的是过期秒数，不是时间戳
+  final String tokenType;
 
   RegisterResponse({
     required this.userId,
     required this.username,
+    this.phone,
+    this.email,
     required this.accessToken,
     required this.refreshToken,
-    required this.expiresAt,
+    required this.expiresIn,
+    required this.tokenType,
   });
 
   factory RegisterResponse.fromJson(Map<String, dynamic> json) {
     return RegisterResponse(
-      userId: json['userId'],
-      username: json['username'],
-      accessToken: json['accessToken'],
-      refreshToken: json['refreshToken'],
-      expiresAt: DateTime.parse(json['expiresAt']),
+      userId: (json['userId'] is int) ? json['userId'] : int.parse(json['userId'].toString()),
+      username: json['username'] as String,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      expiresIn: (json['expiresIn'] is int) ? json['expiresIn'] : int.parse(json['expiresIn'].toString()),
+      tokenType: json['tokenType'] as String? ?? 'Bearer',
     );
   }
+
+  // 计算过期时间
+  DateTime get expiresAt => DateTime.now().add(Duration(seconds: expiresIn));
 }
 
 class UserInfoResponse {
-  final String userId;
+  final int userId;
   final String username;
   final String? phoneNumber;
   final String? email;
@@ -483,7 +500,7 @@ class UserInfoResponse {
 }
 
 class LoginResponse {
-  final String userId;
+  final int userId;
   final String username;
   final String? phone;
   final String? email;

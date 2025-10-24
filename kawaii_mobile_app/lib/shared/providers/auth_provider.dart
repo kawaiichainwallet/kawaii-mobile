@@ -114,6 +114,11 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.success && response.data != null) {
+        final registerData = response.data!;
+
+        // 保存token到安全存储（这是关键！）
+        await _authApi.saveRegistrationTokens(registerData);
+
         // 保存记住我偏好
         await _saveRememberMePreference();
 
@@ -164,6 +169,11 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (response.success && response.data != null) {
+        final registerData = response.data!;
+
+        // 保存token到安全存储（这是关键！）
+        await _authApi.saveRegistrationTokens(registerData);
+
         // 保存记住我偏好
         await _saveRememberMePreference();
 
@@ -481,7 +491,7 @@ class AuthProvider extends ChangeNotifier {
 
 
   // 便利方法：检查当前用户ID
-  Future<String?> getCurrentUserId() async {
+  Future<int?> getCurrentUserId() async {
     return _authApi.getCurrentUserId();
   }
 

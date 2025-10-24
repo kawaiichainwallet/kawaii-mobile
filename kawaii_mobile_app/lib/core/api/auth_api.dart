@@ -128,15 +128,27 @@ class AuthApi {
   Future<void> _saveTokens(LoginResponse loginResponse) async {
     await _secureStorage.setAccessToken(loginResponse.accessToken);
     await _secureStorage.setRefreshToken(loginResponse.refreshToken);
-    await _secureStorage.setUserId(loginResponse.userId);
+    await _secureStorage.setUserId(loginResponse.userId.toString());
     await _secureStorage.setUsername(loginResponse.username);
 
     _logger.info('Token保存成功: userId=${loginResponse.userId}');
   }
 
+  /// 保存注册后的Token到安全存储
+  Future<void> saveRegistrationTokens(RegisterResponse registerResponse) async {
+    await _secureStorage.setAccessToken(registerResponse.accessToken);
+    await _secureStorage.setRefreshToken(registerResponse.refreshToken);
+    await _secureStorage.setUserId(registerResponse.userId.toString());
+    await _secureStorage.setUsername(registerResponse.username);
+
+    _logger.info('注册Token保存成功: userId=${registerResponse.userId}');
+  }
+
   /// 获取当前用户ID
-  Future<String?> getCurrentUserId() async {
-    return _secureStorage.getUserId();
+  Future<int?> getCurrentUserId() async {
+    final userIdStr = await _secureStorage.getUserId();
+    if (userIdStr == null) return null;
+    return int.tryParse(userIdStr);
   }
 
   /// 获取当前用户名
