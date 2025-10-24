@@ -427,13 +427,13 @@ class ApiException implements Exception {
 
 // 响应数据模型
 class RegisterResponse {
-  final int userId;  // 后端返回Long类型
+  final int userId;
   final String username;
   final String? phone;  // 可选字段
   final String? email;  // 可选字段
   final String accessToken;
   final String refreshToken;
-  final int expiresIn;  // 后端返回的是过期秒数，不是时间戳
+  final int expiresIn;  // 过期秒数，不是时间戳
   final String tokenType;
 
   RegisterResponse({
@@ -471,8 +471,15 @@ class UserInfoResponse {
   final String? email;
   final bool isPhoneVerified;
   final bool isEmailVerified;
+  final String? status;
+  final String? displayName;
+  final String? avatarUrl;
+  final String? language;
+  final String? timezone;
+  final String? currency;
   final String kycLevel;
   final DateTime createdAt;
+  final DateTime? lastLoginAt;
 
   UserInfoResponse({
     required this.userId,
@@ -481,20 +488,34 @@ class UserInfoResponse {
     this.email,
     required this.isPhoneVerified,
     required this.isEmailVerified,
+    this.status,
+    this.displayName,
+    this.avatarUrl,
+    this.language,
+    this.timezone,
+    this.currency,
     required this.kycLevel,
     required this.createdAt,
+    this.lastLoginAt,
   });
 
   factory UserInfoResponse.fromJson(Map<String, dynamic> json) {
     return UserInfoResponse(
       userId: json['userId'],
       username: json['username'],
-      phoneNumber: json['phoneNumber'],
+      phoneNumber: json['phone'],
       email: json['email'],
-      isPhoneVerified: json['isPhoneVerified'] ?? false,
-      isEmailVerified: json['isEmailVerified'] ?? false,
-      kycLevel: json['kycLevel'] ?? 'LEVEL_1',
+      isPhoneVerified: json['phoneVerified'] ?? false,
+      isEmailVerified: json['emailVerified'] ?? false,
+      status: json['status'],
+      displayName: json['displayName'],
+      avatarUrl: json['avatarUrl'],
+      language: json['language'],
+      timezone: json['timezone'],
+      currency: json['currency'],
+      kycLevel: json['kycLevel'] ?? 'LEVEL_0',
       createdAt: DateTime.parse(json['createdAt']),
+      lastLoginAt: json['lastLoginAt'] != null ? DateTime.parse(json['lastLoginAt']) : null,
     );
   }
 }
