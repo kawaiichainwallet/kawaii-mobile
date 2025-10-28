@@ -16,7 +16,8 @@ dependencies:
   go_router: ^16.2.1
 
   # State Management
-  provider: ^6.1.2
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
 
   # Network
   dio: ^5.7.0
@@ -51,8 +52,9 @@ dev_dependencies:
 
   # Code Generation
   build_runner: ^2.4.13
-  retrofit_generator: ^10.0.5
+  retrofit_generator: ^9.1.2
   json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.3
 
 flutter:
   uses-material-design: true

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../shared/providers/auth_provider.dart';
-import '../../shared/providers/theme_provider.dart';
-import '../../app/theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/utils/logger.dart';
+import '../../core/router/app_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,8 +19,6 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _textController;
   late Animation<double> _logoAnimation;
   late Animation<double> _textAnimation;
-
-  final AppLogger _logger = AppLogger();
 
   @override
   void initState() {
@@ -66,25 +61,17 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize logger
-      AppLogger().initialize();
-      _logger.info('App started');
-
-      // Initialize providers
-      if (mounted) {
-        await context.read<ThemeProvider>().initialize();
-      }
-      if (mounted) {
-        await context.read<AuthProvider>().initialize();
-      }
+      // TODO: Initialize necessary services
+      // - Check network connectivity
+      // - Load cached data
+      // - Initialize encryption service
 
       // Check if this is the first launch
       await _checkFirstLaunch();
     } catch (e) {
-      _logger.error('Failed to initialize app: $e');
       // Handle initialization error
       if (mounted) {
-        _navigateToAuth();
+        _navigateToAuthSelection();
       }
     }
   }
@@ -106,36 +93,31 @@ class _SplashScreenState extends State<SplashScreen>
         _checkAuthenticationStatus();
       }
     } catch (e) {
-      _logger.error('Failed to check first launch: $e');
-      _navigateToAuth();
+      _navigateToAuthSelection();
     }
   }
 
   void _checkAuthenticationStatus() {
-    final authProvider = context.read<AuthProvider>();
-
-    if (authProvider.isAuthenticated) {
-      _navigateToHome();
-    } else {
-      _navigateToAuth();
-    }
+    // TODO: Check if user is logged in
+    // For now, always navigate to auth selection
+    _navigateToAuthSelection();
   }
 
   void _navigateToOnboarding() {
     if (mounted) {
-      context.go('/onboarding');
+      context.go(AppRoutes.onboarding);
     }
   }
 
-  void _navigateToAuth() {
+  void _navigateToAuthSelection() {
     if (mounted) {
-      context.go('/auth');
+      context.go(AppRoutes.authSelection);
     }
   }
 
-  void _navigateToHome() {
+  void _navigateToMain() {
     if (mounted) {
-      context.go('/home');
+      context.go(AppRoutes.main);
     }
   }
 
@@ -150,8 +132,16 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.primaryGradient,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryColor,
+              AppTheme.primaryLight,
+              AppTheme.secondaryColor,
+            ],
+          ),
         ),
         child: SafeArea(
           child: Center(
@@ -166,25 +156,18 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 120,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          offset: const Offset(0, 10),
-                          blurRadius: 30,
-                          spreadRadius: 0,
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                      boxShadow: AppTheme.shadowLg,
                     ),
                     child: const Icon(
                       Icons.account_balance_wallet,
                       size: 60,
-                      color: AppTheme.primaryPurple,
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: AppTheme.spacingXl),
 
                 // App Name Animation
                 FadeTransition(
@@ -193,17 +176,17 @@ class _SplashScreenState extends State<SplashScreen>
                     children: [
                       Text(
                         AppConstants.appName,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppTheme.spacingSm),
                       Text(
                         '安全 · 便捷 · 可信赖',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withOpacity(0.9),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -211,7 +194,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: AppTheme.spacing2xl),
 
                 // Loading Indicator
                 FadeTransition(
@@ -224,15 +207,15 @@ class _SplashScreenState extends State<SplashScreen>
                         child: CircularProgressIndicator(
                           strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withOpacity(0.8),
+                            Colors.white.withOpacity(0.9),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppTheme.spacingMd),
                       Text(
                         '正在加载...',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                     ],

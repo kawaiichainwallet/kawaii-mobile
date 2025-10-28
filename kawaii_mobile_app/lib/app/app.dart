@@ -1,65 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'routes.dart';
-import 'theme.dart';
-import '../shared/providers/auth_provider.dart';
-import '../shared/providers/theme_provider.dart';
+import '../core/theme/app_theme.dart';
+import '../core/router/app_router.dart';
 
-class KawaiiWalletApp extends StatelessWidget {
+class KawaiiWalletApp extends ConsumerWidget {
   const KawaiiWalletApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider()..initialize(),
-        ),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
+      title: 'KawaiiChain Wallet',
+      debugShowCheckedModeBanner: false,
+
+      // Theme Configuration
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // TODO: 从状态管理中读取
+
+      // Router Configuration
+      routerConfig: router,
+
+      // Localization
+      supportedLocales: const [
+        Locale('zh', 'CN'),
+        Locale('en', 'US'),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'KawaiiChain Wallet',
-            debugShowCheckedModeBanner: false,
 
-            // Theme Configuration
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
+      // System UI Configuration
+      builder: (context, child) {
+        final brightness = Theme.of(context).brightness;
+        final isDark = brightness == Brightness.dark;
 
-            // Router Configuration
-            routerConfig: AppRouter.router,
+        // 设置状态栏样式
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
+            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          ),
+        );
 
-            // Localization
-            supportedLocales: const [
-              Locale('zh', 'CN'),
-              Locale('en', 'US'),
-            ],
-
-            // System UI Configuration
-            builder: (context, child) {
-              // 设置状态栏样式
-              SystemChrome.setSystemUIOverlayStyle(
-                SystemUiOverlayStyle(
-                  statusBarColor: Colors.transparent,
-                  statusBarIconBrightness: themeProvider.isDarkMode
-                      ? Brightness.light
-                      : Brightness.dark,
-                  systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
-                  systemNavigationBarIconBrightness: themeProvider.isDarkMode
-                      ? Brightness.light
-                      : Brightness.dark,
-                ),
-              );
-
-              return child!;
-            },
-          );
-        },
-      ),
+        return child!;
+      },
     );
   }
 }
