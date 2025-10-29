@@ -24,6 +24,27 @@ class AppTheme {
   /// 强调色 - 活力橙
   static const Color accentColor = Color(0xFFFF9800);
 
+  // ==================== 兼容旧主题的颜色别名 ====================
+
+  /// 主紫色（兼容旧主题）
+  static const Color primaryPurple = secondaryColor;
+
+  /// 主粉色（兼容旧主题）
+  static const Color primaryPink = primaryColor;
+
+  /// 强调蓝色（兼容旧主题）
+  static const Color accentBlue = Color(0xFF3B82F6);
+
+  /// 强调绿色（兼容旧主题）
+  static const Color accentGreen = successColor;
+
+  /// 主渐变（用于认证页面等）
+  static const Gradient primaryGradient = LinearGradient(
+    colors: [secondaryColor, primaryColor],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   // ==================== 功能颜色 ====================
 
   /// 成功色

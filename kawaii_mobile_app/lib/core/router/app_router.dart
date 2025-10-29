@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/auth_selection_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/otp_verification_screen.dart';
+import '../../features/auth/providers/auth_state_provider.dart';
 import '../../features/wallet/presentation/screens/create_wallet_flow_screen.dart';
 import '../../features/wallet/presentation/screens/import_wallet_screen.dart';
 import '../../features/home/presentation/screens/main_screen.dart';
@@ -58,13 +59,66 @@ class AppRoutes {
   static const addressBook = '/main/profile/address-book';
   static const security = '/main/profile/security';
   static const settings = '/main/profile/settings';
+
+  /// 不需要登录的公开路由
+  static const List<String> publicRoutes = [
+    splash,
+    onboarding,
+    authSelection,
+    register,
+    login,
+    otpVerification,
+  ];
+
+  /// 需要登录的受保护路由（主要是以 /main 开头的路由）
+  static bool isProtectedRoute(String location) {
+    return location.startsWith('/main') ||
+           location.startsWith('/create-wallet') ||
+           location.startsWith('/import-wallet');
+  }
+
+  /// 认证相关路由（已登录用户不应访问）
+  static bool isAuthRoute(String location) {
+    return location == authSelection ||
+           location == login ||
+           location == register ||
+           location == otpVerification;
+  }
 }
 
 /// 路由配置 Provider
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authStateProvider);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+
+    // 路由守卫：根据认证状态重定向
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+
+      // 如果正在加载认证状态，保持当前页面
+      if (authState.isLoading) {
+        return null;
+      }
+
+      final isAuthenticated = authState.isAuthenticated;
+
+      // 情况1：未登录用户尝试访问需要登录的页面 → 重定向到登录选择页
+      if (!isAuthenticated && AppRoutes.isProtectedRoute(location)) {
+        return AppRoutes.authSelection;
+      }
+
+      // 情况2：已登录用户访问认证相关页面 → 重定向到主页
+      if (isAuthenticated && AppRoutes.isAuthRoute(location)) {
+        return AppRoutes.main;
+      }
+
+      // 情况3：公开路由，允许访问
+      return null;
+    },
+
     routes: [
       // ==================== 启动与引导流程 ====================
       GoRoute(

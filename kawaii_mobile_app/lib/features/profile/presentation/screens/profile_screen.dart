@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../auth/providers/auth_state_provider.dart';
 
 /// 个人中心Tab
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -261,6 +264,45 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: AppTheme.spacing2xl),
+
+          // 退出登录按钮
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
+            child: AppButton(
+              fullWidth: true,
+              type: ButtonType.danger,
+              onPressed: () async {
+                // 显示确认对话框
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('确认退出'),
+                    content: const Text('确定要退出登录吗？'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('取消'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  // 执行退出登录
+                  await ref.read(authStateProvider.notifier).logout();
+                  // 路由守卫会自动重定向到登录页
+                }
+              },
+              child: const Text('退出登录'),
+            ),
+          ),
+
           const SizedBox(height: AppTheme.spacing2xl),
         ],
       ),
