@@ -112,6 +112,10 @@ class ApiClient {
     T Function(Map<String, dynamic>)? fromJson,
   }) async {
     try {
+      _logger.info('ApiClient.request() 开始: $method $endpoint');
+      _logger.info('请求数据: $data');
+      _logger.info('查询参数: $queryParameters');
+
       late Response response;
 
       switch (method.toUpperCase()) {
@@ -119,7 +123,9 @@ class ApiClient {
           response = await _dio.get(endpoint, queryParameters: queryParameters);
           break;
         case 'POST':
+          _logger.info('执行 POST 请求...');
           response = await _dio.post(endpoint, data: data, queryParameters: queryParameters);
+          _logger.info('POST 请求完成，状态码: ${response.statusCode}');
           break;
         case 'PUT':
           response = await _dio.put(endpoint, data: data, queryParameters: queryParameters);
@@ -131,13 +137,18 @@ class ApiClient {
           throw Exception('Unsupported HTTP method: $method');
       }
 
+      _logger.info('响应数据: ${response.data}');
+
       return R<T>.fromJson(
         response.data,
         fromJson: fromJson,
       );
     } on DioException catch (e) {
+      _logger.error('DioException: ${e.type}, message: ${e.message}');
+      _logger.error('Response: ${e.response?.data}');
       throw ApiException.fromDioError(e);
     } catch (e) {
+      _logger.error('Unknown error: $e');
       throw ApiException(
         message: '网络请求失败: $e',
         code: 'UNKNOWN_ERROR',

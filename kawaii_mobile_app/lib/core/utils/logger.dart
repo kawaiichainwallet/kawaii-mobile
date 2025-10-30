@@ -4,11 +4,8 @@ import 'package:flutter/foundation.dart';
 class AppLogger {
   static final AppLogger _instance = AppLogger._internal();
   factory AppLogger() => _instance;
-  AppLogger._internal();
 
-  late final Logger _logger;
-
-  void initialize() {
+  AppLogger._internal() {
     _logger = Logger(
       filter: kDebugMode ? DevelopmentFilter() : ProductionFilter(),
       printer: PrettyPrinter(
@@ -22,6 +19,8 @@ class AppLogger {
       output: ConsoleOutput(),
     );
   }
+
+  late final Logger _logger;
 
   void debug(String message, [dynamic error, StackTrace? stackTrace]) {
     _logger.d(message, error: error, stackTrace: stackTrace);

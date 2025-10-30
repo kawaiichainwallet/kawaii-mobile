@@ -41,33 +41,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
 
+    print('========== 开始登录流程 ==========');
+    print('账号: ${_identifierController.text.trim()}');
+    print('密码: ${_passwordController.text.replaceAll(RegExp(r'.'), '*')}');
+
     try {
+      print('调用 AuthApi.login()...');
       // 调用登录 API
       final response = await _authApi.login(
         identifier: _identifierController.text.trim(),
         password: _passwordController.text,
       );
 
+      print('登录响应: success=${response.success}, msg=${response.msg}');
+      print('响应数据: ${response.data}');
+
       if (response.success && response.data != null) {
+        print('登录成功，刷新认证状态...');
         // 登录成功，刷新认证状态
         await ref.read(authStateProvider.notifier).refresh();
-        // 路由守卫会自动重定向到主界面
 
+        final authState = ref.read(authStateProvider);
+        print('刷新后的认证状态: isAuthenticated=${authState.isAuthenticated}');
+
+        // 路由守卫会自动重定向到主界面
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('登录成功')),
           );
         }
       } else {
+        print('登录失败: ${response.msg}');
         setState(() {
           _errorMessage = response.msg.isNotEmpty ? response.msg : '登录失败';
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('登录异常: $e');
+      print('堆栈信息: $stackTrace');
       setState(() {
         _errorMessage = '登录失败: $e';
       });
     } finally {
+      print('========== 登录流程结束 ==========');
       if (mounted) {
         setState(() {
           _isLoading = false;

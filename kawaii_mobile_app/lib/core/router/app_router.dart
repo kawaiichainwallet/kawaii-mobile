@@ -86,16 +86,28 @@ class AppRoutes {
   }
 }
 
+/// 路由刷新通知器
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+}
+
 /// 路由配置 Provider
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  // 创建路由刷新监听器
+  final notifier = _RouterRefreshNotifier(ref);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: notifier,
 
     // 路由守卫：根据认证状态重定向
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       final location = state.matchedLocation;
 
       // 如果正在加载认证状态，保持当前页面

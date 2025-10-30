@@ -293,10 +293,32 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 );
 
-                if (confirmed == true) {
-                  // 执行退出登录
-                  await ref.read(authStateProvider.notifier).logout();
-                  // 路由守卫会自动重定向到登录页
+                if (confirmed == true && context.mounted) {
+                  try {
+                    // 执行退出登录
+                    await ref.read(authStateProvider.notifier).logout();
+
+                    // 显示成功提示
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('已退出登录'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // 显示错误提示
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('退出失败: $e'),
+                          backgroundColor: AppTheme.errorColor,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  }
                 }
               },
               child: const Text('退出登录'),

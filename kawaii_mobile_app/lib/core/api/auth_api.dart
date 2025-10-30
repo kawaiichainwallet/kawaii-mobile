@@ -22,18 +22,26 @@ class AuthApi {
     required String password,
   }) async {
     try {
+      _logger.info('AuthApi.login() 开始: identifier=$identifier');
       final response = await _apiClient.login(
         identifier: identifier,
         password: password,
       );
 
+      _logger.info('AuthApi.login() 响应: success=${response.success}');
+
       if (response.success && response.data != null) {
+        _logger.info('保存登录 Token...');
         await _saveTokens(response.data!);
+        _logger.info('Token 保存成功');
+      } else {
+        _logger.warning('登录失败: ${response.msg}');
       }
 
       return response;
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.error('登录失败: $e');
+      _logger.error('堆栈: $stackTrace');
       rethrow;
     }
   }
@@ -96,16 +104,35 @@ class AuthApi {
 
   /// 用户登出
   Future<void> logout() async {
+    _logger.info('开始执行登出操作');
+
+    // 先清除本地存储，确保即使服务端调用失败也能登出
     try {
-      // 调用服务端登出接口
-      await _apiClient.logout();
+      _logger.info('清除本地存储...');
+      await _secureStorage.clearAll();
+      _logger.info('本地存储已清除');
+    } catch (e) {
+      _logger.error('清除本地存储失败: $e');
+      rethrow;
+    }
+
+    // 尝试调用服务端登出接口（非关键操作）
+    try {
+      _logger.info('调用服务端登出接口...');
+      await _apiClient.logout().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          _logger.warning('服务端登出接口超时');
+          return R<void>(success: false, msg: '超时');
+        },
+      );
+      _logger.info('服务端登出成功');
     } catch (e) {
       _logger.error('服务端登出失败: $e');
-      // 即使服务端登出失败，也要清除本地Token
-    } finally {
-      // 清除本地存储的Token
-      await _secureStorage.clearAll();
+      // 不抛出异常，因为本地已经清除
     }
+
+    _logger.info('登出操作完成');
   }
 
   /// 检查用户是否已登录
